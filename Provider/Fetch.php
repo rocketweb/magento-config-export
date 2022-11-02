@@ -38,22 +38,38 @@ class Fetch
     {
         $levels = $this->getPathLevels($path);
 
-        if (!$this->configCache) {
-            $this->configCache = $this->config->get('system');
-        }
+        $configCache = $this->getConfigCache();
 
         $values = array_fill_keys($scopes, []);
-        $defaultScopeValues = $this->getScopeValues($this->configCache['default'], $levels);
+        $defaultScopeValues = $this->getScopeValues($configCache['default'], $levels);
 
+        if (($key = array_search('default', $scopes)) !== false) {
+            $values['default'] = $defaultScopeValues;
+            unset($scopes[$key]);
+        }
+
+        $values = array_merge_recursive(
+            $values,
+            $this->getNonDefaultScopeValues($scopes, $levels, $defaultScopeValues)
+        );
+
+        foreach ($values as $scope => $scopeData) {
+            if (count($scopeData) == 0) {
+                unset($values[$scope]);
+            }
+        }
+
+        return $values;
+    }
+
+    private function getNonDefaultScopeValues(
+        array $scopes,
+        array $levels,
+        array $defaultScopeValues
+    ): array {
+        $values = [];
         foreach ($scopes as $scope) {
-            if (!isset($this->configCache[$scope])) {
-                throw new InvalidArgumentException(__('Invalid scope key: ' . $scope));
-            }
-            if ($scope === 'default') {
-                $values[$scope] = $defaultScopeValues;
-                continue;
-            }
-
+            $values[$scope] = [];
             foreach ($this->configCache[$scope] as $scopeKey => $scopeData) {
                 if (is_numeric($scopeKey) || in_array($scopeKey, ['admin', 'default'])) {
                     continue;
@@ -65,12 +81,6 @@ class Fetch
                 if (count($scopeValues) > 0) {
                     $values[$scope][$scopeKey] = $scopeValues;
                 }
-            }
-        }
-
-        foreach ($values as $scope => $scopeData) {
-            if (count($scopeData) == 0) {
-                unset($values[$scope]);
             }
         }
 
@@ -109,6 +119,46 @@ class Fetch
             return [];
         }
 
+        if ($wildcardScopes = $this->getL3WildCardScopes($levels, $scopeData)) {
+            return $wildcardScopes;
+        }
+
+        if ($wildcardScopes = $this->getL2WildCardScopes($levels, $scopeData)) {
+            return $wildcardScopes;
+        }
+
+        $scopeData = $scopeData[$level1];
+        if (isset($scopeData[$level2]) && isset($scopeData[$level2][$level3])) {
+            return [$level1 => [$level2 => [$level3 => $scopeData[$level2][$level3]]]];
+        }
+
+        return [];
+    }
+
+    private function getL2WildCardScopes(array $levels, array $scopeData): ?array
+    {
+        [$level1, $level2, $level3] = $levels;
+
+        $scopeData = $scopeData[$level1];
+        if ($level2 !== '*') {
+            return null;
+        }
+        $values = [$level1 => []];
+        foreach ($scopeData as $level2 => $l3scopeData) {
+            foreach ($l3scopeData as $key => $value) {
+                if ($key === $level3) {
+                    $values[$level1][$level2] = $values[$level1][$level2] ?? [];
+                    $values[$level1][$level2][$level3] = $value;
+                }
+            }
+        }
+        return $values;
+    }
+
+    private function getL3WildCardScopes(array $levels, array $scopeData): ?array
+    {
+        [$level1, $level2, $level3] = $levels;
+
         $scopeData = $scopeData[$level1];
         if ($level2 === '*' && $level3 === '*') {
             return [$level1 => $scopeData];
@@ -118,24 +168,7 @@ class Fetch
             return [$level1 => [$level2 => $scopeData[$level2]]];
         }
 
-        if ($level2 === '*' && $level3 !== '*') {
-            $values = [$level1 => []];
-            foreach ($scopeData as $level2 => $l3scopeData) {
-                foreach ($l3scopeData as $key => $value) {
-                    if ($key === $level3) {
-                        $values[$level1][$level2] = $values[$level1][$level2] ?? [];
-                        $values[$level1][$level2][$level3] = $value;
-                    }
-                }
-            }
-            return $values;
-        }
-
-        if (isset($scopeData[$level2]) && isset($scopeData[$level2][$level3])) {
-            return [$level1 => [$level2 => [$level3 => $scopeData[$level2][$level3]]]];
-        }
-
-        return [];
+        return null;
     }
 
     /**
@@ -157,5 +190,14 @@ class Fetch
         }
 
         return $levels;
+    }
+
+    private function getConfigCache(): array
+    {
+        if (!$this->configCache) {
+            $this->configCache = $this->config->get('system');
+        }
+
+        return $this->configCache;
     }
 }
