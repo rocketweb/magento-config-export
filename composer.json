@@ -1,0 +1,30 @@
+{
+    "name": "rocketweb/magento-config-export",
+    "description": "Export specific configuration into config.xml to make it VCS transferable without locking them by using app/etc/config.php or app/etc/env.php",
+    "require": {
+        "ext-simplexml": "*",
+        "ext-dom": "*",
+        "php": "^7.4.0",
+        "magento/magento-composer-installer": "*"
+    },
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": [
+        "OSL 3.0"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "RocketWeb\\Config\\": ""
+        }
+    },
+    "extra": {
+        "map": [
+            [
+                "RocketWeb/Config"
+            ]
+        ]
+    }
+}

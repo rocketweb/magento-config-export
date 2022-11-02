@@ -1,0 +1,16 @@
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Framework\Console\CommandListInterface">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="rw_config_data_export"
+                      xsi:type="object">RocketWeb\ConfigExport\Console\Command\ExportConfigsCommand</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="RocketWeb\ConfigExport\Console\Command\ExportConfigsCommand">
+        <arguments>
+            <argument name="configHandler" xsi:type="object">RocketWeb\ConfigExport\Handler\Config\Proxy</argument>
+            <argument name="fetch" xsi:type="object">RocketWeb\ConfigExport\Provider\Fetch\Proxy</argument>
+        </arguments>
+    </type>
+</config>
