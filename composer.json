@@ -8,7 +8,7 @@
         "magento/magento-composer-installer": "*"
     },
     "type": "magento2-module",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "license": [
         "OSL-3.0",
         "AFL-3.0"
@@ -18,13 +18,13 @@
             "registration.php"
         ],
         "psr-4": {
-            "RocketWeb\\Config\\": ""
+            "RocketWeb\\ConfigExport\\": ""
         }
     },
     "extra": {
         "map": [
             [
-                "RocketWeb/Config"
+                "RocketWeb/ConfigExport"
             ]
         ]
     }

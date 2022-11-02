@@ -1,4 +1,4 @@
-## RocketWeb Config (Export)
+## RocketWeb Config Export
 
 This module is a simple tool to export specific sections of configuration into config.xml file to make it VCS 
 transferable without locking them by using app/etc/config.php or app/etc/env.php
