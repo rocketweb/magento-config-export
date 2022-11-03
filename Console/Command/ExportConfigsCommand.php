@@ -20,25 +20,30 @@ namespace RocketWeb\ConfigExport\Console\Command;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class ExportConfigsCommand extends Command
 {
     private const ARG_SCOPES = 'scopes';
     private const ARG_PATHS = 'paths';
+    private const OPT_SKIP_DEFAULTS = 'skip';
     private const ALLOWED_SCOPES = ['default', 'websites', 'stores'];
 
     private \RocketWeb\ConfigExport\Provider\Fetch $fetch;
     private \RocketWeb\ConfigExport\Handler\Config $configHandler;
+    private \RocketWeb\ConfigExport\Handler\DefaultRemoval $defaultRemoval;
 
     public function __construct(
         \RocketWeb\ConfigExport\Handler\Config $configHandler,
         \RocketWeb\ConfigExport\Provider\Fetch $fetch,
+        \RocketWeb\ConfigExport\Handler\DefaultRemoval $defaultRemoval,
         string $name = null
     ) {
         parent::__construct($name);
         $this->fetch = $fetch;
         $this->configHandler = $configHandler;
+        $this->defaultRemoval = $defaultRemoval;
     }
 
     protected function configure(): void
@@ -58,6 +63,14 @@ class ExportConfigsCommand extends Command
             InputArgument::REQUIRED,
             'Path(s) that you want to export. Wildcard support as asterisk for second and third section'
             . ' of the path (*). Example: trans_email/*/email'
+        );
+        $this->addOption(
+            self::OPT_SKIP_DEFAULTS,
+            'r',
+            InputOption::VALUE_NONE,
+            'If config value matches the defaults from from other config.xml file it will get skipped. '
+            . 'This allows you to only get values that were manually set (core_config_data or config.php or env.php) and '
+            . 'don\'t match default values!'
         );
 
         parent::configure();
@@ -90,9 +103,15 @@ class ExportConfigsCommand extends Command
                 return;
             }
         }
+
+        $removeDefaults = (bool)$input->getOption(self::OPT_SKIP_DEFAULTS);
+
         $values = [];
         foreach ($paths as $path) {
             $values = array_merge_recursive($values, $this->fetch->values($path, $scopes));
+        }
+        if ($removeDefaults) {
+            $values = $this->defaultRemoval->execute($values);
         }
 
         $xml = $this->configHandler->get();

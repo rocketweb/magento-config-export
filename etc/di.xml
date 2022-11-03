@@ -11,6 +11,7 @@
         <arguments>
             <argument name="configHandler" xsi:type="object">RocketWeb\ConfigExport\Handler\Config\Proxy</argument>
             <argument name="fetch" xsi:type="object">RocketWeb\ConfigExport\Provider\Fetch\Proxy</argument>
+            <argument name="defaultRemoval" xsi:type="object">RocketWeb\ConfigExport\Handler\DefaultRemoval</argument>
         </arguments>
     </type>
 </config>
